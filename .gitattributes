@@ -1,0 +1,20 @@
+*                     text=auto
+
+.gitattributes        text export-ignore linguist-language=gitattributes
+.gitignore            text export-ignore
+.editorconfig         text
+
+*.md                  text
+*.yml                 text
+*.yaml                text
+*.json                text
+*.py                  text
+
+*.{cmd,[cC][mM][dD]}  text eol=crlf
+*.{bat,[bB][aA][tT]}  text eol=crlf
+
+*.sh                  text eol=lf
+
+Makefile              text
+
+Dockerfile            text
