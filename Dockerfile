@@ -1,4 +1,4 @@
-FROM python:3-bookworm
+FROM python:3.11-bookworm
 
 RUN apt update && apt install -y \
     libapt-pkg-dev \
