@@ -10,6 +10,7 @@
 
 # pylint: disable=invalid-name
 
+import argparse
 import collections
 import contextlib
 import os
@@ -76,14 +77,14 @@ def _write_autoremove_pending(registry, cache):
     g.set(len(autoremovable_packages))
 
 
-def _write_reboot_required(registry):
+def _write_reboot_required(registry, root_dir):
     g = Gauge('node_reboot_required', "Node reboot is required for software updates.",
               registry=registry)
-    g.set(int(os.path.isfile('/run/reboot-required')))
+    g.set(int(os.path.isfile(os.path.join(root_dir, 'run/reboot-required'))))
 
 
-def _main():
-    cache = apt.cache.Cache()
+def generate_metrics(root_dir: str = '/') -> bytes:
+    cache = apt.cache.Cache(rootdir=root_dir)
 
     # First of all, attempt to update the index. If we don't have permission
     # to do so (or it fails for some reason), it's not the end of the world,
@@ -98,9 +99,21 @@ def _main():
     _write_pending_upgrades(registry, cache)
     _write_held_upgrades(registry, cache)
     _write_autoremove_pending(registry, cache)
-    _write_reboot_required(registry)
+    _write_reboot_required(registry, root_dir)
+
     return generate_latest(registry)
 
 
+def _main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-r', '--root-dir', dest='root_dir', type=str, default='/',
+                        help="Set root directory to a different path than /")
+    args = parser.parse_args()
+
+    metrics = generate_metrics(args.root_dir)
+
+    print(metrics.decode(), end='')
+
+
 if __name__ == "__main__":
-    print(_main().decode(), end='')
+    _main()
