@@ -101,6 +101,8 @@ def generate_metrics(root_dir: str = '/') -> bytes:
     _write_autoremove_pending(registry, cache)
     _write_reboot_required(registry, root_dir)
 
+    cache.close()
+
     return generate_latest(registry)
 
 
