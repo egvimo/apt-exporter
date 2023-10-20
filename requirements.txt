@@ -1,4 +1,4 @@
 python-apt @ git+https://salsa.debian.org/apt-team/python-apt.git@2.5.3
 prometheus_client==0.17.1
-fastapi==0.103.2
-uvicorn[standard]==0.23.2
+Flask==3.0.0
+gunicorn==21.2.0
