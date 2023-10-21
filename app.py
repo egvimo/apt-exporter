@@ -1,13 +1,14 @@
 import os
-from flask import Flask, Response
+from fastapi import FastAPI
+from fastapi.responses import PlainTextResponse
 import apt_info
 
 root_dir = os.environ.get("APT_ROOT_DIR", "/")
 
-app = Flask(__name__)
+app = FastAPI()
 
 
-@app.route("/metrics")
+@app.get("/metrics", response_class=PlainTextResponse)
 def metrics():
     data = apt_info.generate_metrics(root_dir=root_dir)
-    return Response(data, mimetype='text/plain')
+    return data
