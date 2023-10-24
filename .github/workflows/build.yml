@@ -33,6 +33,31 @@ jobs:
       - name: Lint
         run: pylint app.py apt_info.py
 
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3
+        id: setup-python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+
+      - name: Prepare
+        run: |
+          sudo apt install libapt-pkg-dev
+          pip install pytest httpx
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Test
+        run: pytest test_app.py
+
   build:
     name: Build
     runs-on: ubuntu-latest
