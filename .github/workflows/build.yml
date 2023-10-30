@@ -25,13 +25,13 @@ jobs:
       - name: Prepare
         run: |
           sudo apt install libapt-pkg-dev
-          pip install pylint
+          pip install pipenv
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pipenv install --dev
 
       - name: Lint
-        run: pylint app.py apt_info.py
+        run: pipenv run pylint app.py apt_info.py
 
   test:
     name: Test
@@ -50,13 +50,13 @@ jobs:
       - name: Prepare
         run: |
           sudo apt install libapt-pkg-dev
-          pip install pytest httpx
+          pip install pipenv
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pipenv install --dev
 
       - name: Test
-        run: pytest test_app.py
+        run: pipenv run pytest test_app.py
 
   build:
     name: Build
