@@ -10,6 +10,6 @@ fastapi = "==0.104.1"
 uvicorn = {version = "==0.24.0", extras = ["standard"]}
 
 [dev-packages]
-pylint = "==3.0.2"
+pylint = "==3.0.3"
 pytest = "==7.4.3"
 httpx = "==0.25.1"
