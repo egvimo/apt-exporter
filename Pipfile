@@ -12,4 +12,4 @@ uvicorn = {version = "==0.24.0", extras = ["standard"]}
 [dev-packages]
 pylint = "==3.0.3"
 pytest = "==7.4.3"
-httpx = "==0.25.1"
+httpx = "==0.26.0"
