@@ -11,5 +11,5 @@ uvicorn = {version = "==0.27.1", extras = ["standard"]}
 
 [dev-packages]
 pylint = "==3.0.3"
-pytest = "==8.0.0"
+pytest = "==8.0.1"
 httpx = "==0.26.0"
