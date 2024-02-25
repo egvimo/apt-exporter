@@ -6,7 +6,7 @@ name = "pypi"
 [packages]
 python-apt = {ref = "2.5.3", git = "https://salsa.debian.org/apt-team/python-apt.git"}
 prometheus_client = "==0.20.0"
-fastapi = "==0.109.2"
+fastapi = "==0.110.0"
 uvicorn = {version = "==0.27.1", extras = ["standard"]}
 
 [dev-packages]
