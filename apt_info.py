@@ -1,31 +1,32 @@
 #!/usr/bin/env python3
-#
-# Description: Expose metrics from apt. This is inspired by and
-# intended to be a replacement for the original apt.sh.
-#
-# This script deliberately does *not* update the apt cache. You need
-# something else to run `apt update` regularly for the metrics to be
-# up to date. This can be done in numerous ways, but the canonical way
-# is to use the normal `APT::Periodic::Update-Package-Lists`
-# setting.
-#
-# This, for example, will enable a nightly job that runs `apt update`:
-#
-#     echo 'APT::Periodic::Update-Package-Lists "1";' > /etc/apt/apt.conf.d/99_auto_apt_update.conf
-#
-# See /usr/lib/apt/apt.systemd.daily for details.
-#
-# Dependencies: python3-apt, python3-prometheus-client
-#
-# Authors: Kyle Fazzari <kyrofa@ubuntu.com>
-#          Daniel Swarbrick <dswarbrick@debian.org>
 
-# pylint: disable=invalid-name
+"""
+Description: Expose metrics from apt. This is inspired by and
+intended to be a replacement for the original apt.sh.
+
+This script deliberately does *not* update the apt cache. You need
+something else to run `apt update` regularly for the metrics to be
+up to date. This can be done in numerous ways, but the canonical way
+is to use the normal `APT::Periodic::Update-Package-Lists`
+setting.
+
+This, for example, will enable a nightly job that runs `apt update`:
+
+    echo 'APT::Periodic::Update-Package-Lists "1";' > /etc/apt/apt.conf.d/99_auto_apt_update.conf
+
+See /usr/lib/apt/apt.systemd.daily for details.
+
+Dependencies: python3-apt, python3-prometheus-client
+
+Authors: Kyle Fazzari <kyrofa@ubuntu.com>
+         Daniel Swarbrick <dswarbrick@debian.org>
+"""
 
 import argparse
 import collections
 import os
 import apt
+import apt_pkg
 from prometheus_client import CollectorRegistry, Gauge, generate_latest
 
 _UpgradeInfo = collections.namedtuple("_UpgradeInfo", ["labels", "count"])
@@ -54,12 +55,8 @@ def _convert_candidates_to_upgrade_infos(candidates):
 
 
 def _write_pending_upgrades(registry, cache):
-    # Discount any changes that apply to packages that aren't installed (e.g.
-    # count an upgrade to package A that adds a new dependency on package B as
-    # only one upgrade, not two). See the following issue for more details:
-    # https://github.com/prometheus-community/node-exporter-textfile-collector-scripts/issues/85
     candidates = {
-        p.candidate for p in cache.get_changes() if p.is_installed and p.marked_upgrade
+        p.candidate for p in cache if p.is_upgradable
     }
     upgrade_list = _convert_candidates_to_upgrade_infos(candidates)
 
@@ -71,7 +68,10 @@ def _write_pending_upgrades(registry, cache):
 
 
 def _write_held_upgrades(registry, cache):
-    held_candidates = {p.candidate for p in cache if p.is_upgradable and p.marked_keep}
+    held_candidates = {
+        p.candidate for p in cache
+        if p.is_upgradable and p._pkg.selected_state == apt_pkg.SELSTATE_HOLD  # pylint: disable=protected-access
+    }
     upgrade_list = _convert_candidates_to_upgrade_infos(held_candidates)
 
     if upgrade_list:
@@ -88,6 +88,25 @@ def _write_autoremove_pending(registry, cache):
     g.set(len(autoremovable_packages))
 
 
+def _write_cache_timestamps(registry):
+    g = Gauge('apt_package_cache_timestamp_seconds', "Apt update last run time.", registry=registry)
+    apt_pkg.init_config()
+    if (
+        apt_pkg.config.find_b("APT::Periodic::Update-Package-Lists") and
+        os.path.isfile("/var/lib/apt/periodic/update-success-stamp")
+    ):
+        # if we run updates automatically with APT::Periodic, we can
+        # check this timestamp file if it exists
+        stamp_file = "/var/lib/apt/periodic/update-success-stamp"
+    else:
+        # if not, let's just fallback on the partial file of the lists directory
+        stamp_file = '/var/lib/apt/lists/partial'
+    try:
+        g.set(os.stat(stamp_file).st_mtime)
+    except OSError:
+        pass
+
+
 def _write_reboot_required(registry, root_dir):
     g = Gauge('node_reboot_required', "Node reboot is required for software updates.",
               registry=registry)
@@ -96,13 +115,13 @@ def _write_reboot_required(registry, root_dir):
 
 def generate_metrics(root_dir: str = '/') -> bytes:
     cache = apt.cache.Cache(rootdir=root_dir)
-    registry = CollectorRegistry()
 
+    registry = CollectorRegistry()
     _write_pending_upgrades(registry, cache)
     _write_held_upgrades(registry, cache)
     _write_autoremove_pending(registry, cache)
+    _write_cache_timestamps(registry)
     _write_reboot_required(registry, root_dir)
-
     return generate_latest(registry)
 
 
