@@ -1,4 +1,4 @@
-FROM python:3.12-bookworm as build
+FROM python:3.13-bookworm as build
 
 ENV PIPENV_VENV_IN_PROJECT=1
 
